@@ -152,7 +152,6 @@ public class MainActivity extends Activity implements SensorEventListener {
 
                 latitude = location.getLatitude();
                 longitude = location.getLongitude();
-                System.out.println(latitude);
                 if (location.hasSpeed()) {
                     speed = location.getSpeed();
                 }
@@ -290,7 +289,6 @@ public class MainActivity extends Activity implements SensorEventListener {
                 mediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_480P));
 
             //String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-
             mediaRecorder.setOutputFile(Environment.getExternalStorageDirectory().getPath() + "/elab/" + timeStampFile + "/" + timeStampFile + ".mp4");
             // 设置录制的视频编码和音频编码
 //            mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
