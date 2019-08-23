@@ -9,7 +9,6 @@ import java.util.Date;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
@@ -36,6 +35,8 @@ import android.location.LocationManager;
 import android.location.LocationListener;
 
 
+import com.example.juju.e_labvideoapp.utils.DialogUHelper;
+
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -56,8 +57,9 @@ public class MainActivity extends Activity implements SensorEventListener {
     String timeStampFile;
     int clickFlag = 0;
     Timer timer;
-    int VideoFrameRate = 24;
-
+    int VideoFrameRate = 30;
+    int samplingPeriodUs = 0;
+    String videoFps = "30000 30000";
     LocationListener locationListener;
     LocationManager LM;
 
@@ -124,6 +126,12 @@ public class MainActivity extends Activity implements SensorEventListener {
             //findBackFacingCamera()
             mCamera = Camera.open(0);
             mPreview.refreshCamera(mCamera);
+            Camera.Parameters params = mCamera.getParameters();
+            List<int[]> supportedPreviewFpsRange = params.getSupportedPreviewFpsRange();
+            options2 = new String[supportedPreviewFpsRange.size()];
+            for (int i = 0; i < supportedPreviewFpsRange.size(); i++) {
+                options2[i] = supportedPreviewFpsRange.get(i)[0] + " " + supportedPreviewFpsRange.get(i)[1];
+            }
         }
         // 得到设置支持的所有传感器的List
 //        List<Sensor> sensorList = sensorManager.getSensorList(Sensor.TYPE_ALL);
@@ -131,11 +139,11 @@ public class MainActivity extends Activity implements SensorEventListener {
 //        for (Sensor sensor : sensorList) {
 //            sensorNameList.add(sensor.getName());
 //        }
-        sensorManager.registerListener(this, magneticSensor, SensorManager.SENSOR_DELAY_NORMAL);
-        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-        sensorManager.registerListener(this, head, SensorManager.SENSOR_DELAY_GAME);
-        sensorManager.registerListener(this, gyro, SensorManager.SENSOR_DELAY_NORMAL);
-        sensorManager.registerListener(this, rotv, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, magneticSensor, currentOptions1Index);
+        sensorManager.registerListener(this, accelerometer, currentOptions1Index);
+        sensorManager.registerListener(this, head, currentOptions1Index);
+        sensorManager.registerListener(this, gyro, currentOptions1Index);
+        sensorManager.registerListener(this, rotv, currentOptions1Index);
 
 
         locationListener = new LocationListener() {
@@ -144,7 +152,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 
                 latitude = location.getLatitude();
                 longitude = location.getLongitude();
-
+                System.out.println(latitude);
                 if (location.hasSpeed()) {
                     speed = location.getSpeed();
                 }
@@ -175,7 +183,6 @@ public class MainActivity extends Activity implements SensorEventListener {
         // applications
         releaseCamera();
         sensorManager.unregisterListener(this);
-
     }
 
     private boolean checkCameraHardware(Context context) {
@@ -228,17 +235,16 @@ public class MainActivity extends Activity implements SensorEventListener {
                 }
 
                 // work on UiThread for better performance
-                runOnUiThread(new Runnable() {
-                    public void run() {
-                        try {
-                            mediaRecorder.start();
-                        } catch (final Exception ex) {
-                        }
+                runOnUiThread(() -> {
+                    try {
+                        mediaRecorder.start();
+                    } catch (final Exception ex) {
                     }
                 });
                 Toast.makeText(MainActivity.this, "Recording...", Toast.LENGTH_LONG).show();
                 Camera.Parameters params = mCamera.getParameters();
-                params.setPreviewFpsRange(30000, 30000); // 30 fps
+                String[] s = videoFps.split(" ");
+                params.setPreviewFpsRange(Integer.valueOf(s[0]), Integer.valueOf(s[1])); // 30 fps
                 if (params.isAutoExposureLockSupported())
                     params.setAutoExposureLock(true);
 
@@ -269,13 +275,13 @@ public class MainActivity extends Activity implements SensorEventListener {
     private boolean prepareMediaRecorder() {
 
         try {
+            mCamera.unlock();
             mediaRecorder = new MediaRecorder();
 
-            mCamera.unlock();
             mediaRecorder.setCamera(mCamera);
-
             mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+
             if (quality == 0)
                 mediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_1080P));
             else if (quality == 1)
@@ -286,8 +292,13 @@ public class MainActivity extends Activity implements SensorEventListener {
             //String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
 
             mediaRecorder.setOutputFile(Environment.getExternalStorageDirectory().getPath() + "/elab/" + timeStampFile + "/" + timeStampFile + ".mp4");
-//            mediaRecorder.setVideoFrameRate(VideoFrameRate);
+            // 设置录制的视频编码和音频编码
+//            mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+//            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+            // 设置录制的视频帧率。必须放在设置编码和格式的后面，否则报错
             //mediaRecorder.setMaxDuration(5000);
+//            mediaRecorder.setVideoFrameRate(10);
+//            mediaRecorder.setCaptureRate(rate);
             mediaRecorder.prepare();
         } catch (IllegalStateException e) {
             releaseMediaRecorder();
@@ -473,6 +484,12 @@ public class MainActivity extends Activity implements SensorEventListener {
         }
     }
 
+    String[] options = {"1080p", "720p", "480p"};
+    Integer currentOptions1Index = 0;
+    String[] options1 = {"SENSOR_DELAY_FASTEST", "SENSOR_DELAY_GAME", "SENSOR_DELAY_UI", "SENSOR_DELAY_NORMAL"};
+    String[] options2;
+    Integer currentOptions2Index = 0;
+
     public void getValue() {
         float[] r = new float[9];
         float[] values = new float[3];
@@ -493,10 +510,6 @@ public class MainActivity extends Activity implements SensorEventListener {
         tv.setText(setTextText);
     }
 
-    String[] options = {"1080p", "720p", "480p"};
-    String[] options1 = {"15 Hz", "10 Hz"};
-    String[] options2 = {"10 fps", "20 fps", "30 fps"};
-
 
     public void addQuality(View view) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -509,69 +522,39 @@ public class MainActivity extends Activity implements SensorEventListener {
             setting = "480p";
         }
         builder.setTitle("Pick Quality, Current setting: " + setting)
-                .setItems(options, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        // The 'which' argument contains the index position
-                        // of the selected item
-                        if (which == 0) {
-                            quality = 0;
-                        } else if (which == 1) {
-                            quality = 1;
-                        } else if (which == 2) {
-                            quality = 2;
-                        }
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        quality = 0;
+                    } else if (which == 1) {
+                        quality = 1;
+                    } else if (which == 2) {
+                        quality = 2;
                     }
                 });
         builder.show();
     }
 
     public void addRate(View view) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        String setting = new String();
-        if (rate == 100) {
-            setting = "10 Hz";
-        } else if (rate == 67) {
-            setting = "15 Hz";
-        }
-        builder.setTitle("Pick Data Save Rate, Current setting: " + setting)
-                .setItems(options1, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        // The 'which' argument contains the index position
-                        // of the selected item
-                        if (which == 0) {
-                            rate = 67;
-                        } else if (which == 1) {
-                            rate = 100;
-                        }
-                    }
-                });
-        builder.show();
+        DialogUHelper.shopSingleCheckableDialog(this, options1, currentOptions1Index, (dialog, which) -> {
+            samplingPeriodUs = which;
+            currentOptions1Index = which;
+            sensorManager.unregisterListener(this);
+            sensorManager.registerListener(this, magneticSensor, currentOptions1Index);
+            sensorManager.registerListener(this, accelerometer, currentOptions1Index);
+            sensorManager.registerListener(this, head, currentOptions1Index);
+            sensorManager.registerListener(this, gyro, currentOptions1Index);
+            sensorManager.registerListener(this, rotv, currentOptions1Index);
+            dialog.dismiss();
+        });
+
+
     }
 
     public void addFrameRate(View view) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        String setting = new String();
-        if (VideoFrameRate == 10) {
-            setting = "10 fps";
-        } else if (VideoFrameRate == 20) {
-            setting = "20 fps";
-        } else if (VideoFrameRate == 30) {
-            setting = "30 fps";
-        }
-        builder.setTitle("Pick Video fps, Current setting: " + setting)
-                .setItems(options2, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        // The 'which' argument contains the index position
-                        // of the selected item
-                        if (which == 0) {
-                            VideoFrameRate = 10;
-                        } else if (which == 1) {
-                            VideoFrameRate = 20;
-                        } else if (which == 2) {
-                            VideoFrameRate = 30;
-                        }
-                    }
-                });
-        builder.show();
+        DialogUHelper.shopSingleCheckableDialog(this, options2, currentOptions2Index, (dialog, which) -> {
+            videoFps = options2[which];
+            currentOptions2Index = which;
+            dialog.dismiss();
+        });
     }
 }

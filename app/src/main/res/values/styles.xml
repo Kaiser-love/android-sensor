@@ -2,7 +2,19 @@
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
     </style>
 
+    <style name="LightThemeBlue" parent="QMUI.Compat.NoActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccentBlue</item>
+        <item name="windowActionModeOverlay">true</item>
+        <item name="colorControlNormal">@color/colorPrimary</item>
+        <item name="colorControlActivated">@color/colorPrimary</item>
+        <item name="android:windowNoTitle">true</item>
+           
+        <item name="android:windowFullscreen">true</item>   
+        <item name="android:windowIsTranslucent">true</item>
+
+    </style>
 </resources>
