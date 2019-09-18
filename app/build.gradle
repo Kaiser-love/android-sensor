@@ -14,7 +14,7 @@ android {
     }
     defaultConfig {
         applicationId "com.example.juju.e_labvideoapp"
-        minSdkVersion 14
+        minSdkVersion 21
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
@@ -33,7 +33,7 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'androidx.appcompat:appcompat:1.0.0'
     implementation 'com.hjq:xxpermissions:5.2'
     // QMUI
     implementation 'com.qmuiteam:qmui:1.1.3'

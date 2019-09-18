@@ -7,11 +7,9 @@ import java.io.PrintWriter;
 import java.util.Date;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
-import android.hardware.Camera.CameraInfo;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -29,11 +27,9 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import android.location.Location;
 import android.location.LocationManager;
 import android.location.LocationListener;
-
 
 import com.example.juju.e_labvideoapp.utils.DialogUHelper;
 
@@ -57,11 +53,12 @@ public class MainActivity extends Activity implements SensorEventListener {
     String timeStampFile;
     int clickFlag = 0;
     Timer timer;
-    int VideoFrameRate = 30;
     int samplingPeriodUs = 0;
     String videoFps = "30000 30000";
     LocationListener locationListener;
     LocationManager LM;
+    // 当前视频帧
+    int currentPhotoIndex = 1;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -95,25 +92,9 @@ public class MainActivity extends Activity implements SensorEventListener {
         //用来保存地磁传感器的值
         geomagnetic = new float[3];
         gravity = new float[3];
+
     }
 
-
-    private int findBackFacingCamera() {
-        int cameraId = 0;
-        // Search for the back facing camera
-        // get the number of cameras
-        int numberOfCameras = Camera.getNumberOfCameras();
-        // for every camera check
-        for (int i = 0; i < numberOfCameras; i++) {
-            CameraInfo info = new CameraInfo();
-            Camera.getCameraInfo(i, info);
-            if (info.facing == CameraInfo.CAMERA_FACING_BACK) {
-                cameraId = i;
-                break;
-            }
-        }
-        return cameraId;
-    }
 
     public void onResume() {
         super.onResume();
@@ -132,6 +113,7 @@ public class MainActivity extends Activity implements SensorEventListener {
             for (int i = 0; i < supportedPreviewFpsRange.size(); i++) {
                 options2[i] = supportedPreviewFpsRange.get(i)[0] + " " + supportedPreviewFpsRange.get(i)[1];
             }
+
         }
         // 得到设置支持的所有传感器的List
 //        List<Sensor> sensorList = sensorManager.getSensorList(Sensor.TYPE_ALL);
@@ -199,8 +181,8 @@ public class MainActivity extends Activity implements SensorEventListener {
     OnClickListener captureListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
-
             if (recording) {
+                currentPhotoIndex = 1;
                 // stop recording and release camera
                 mediaRecorder.stop(); // stop the recording
                 releaseMediaRecorder(); // release the MediaRecorder object
@@ -222,12 +204,25 @@ public class MainActivity extends Activity implements SensorEventListener {
                 }
 */
             } else {
-                timeStampFile = String.valueOf((new Date()).getTime());
-                File wallpaperDirectory = new File(Environment.getExternalStorageDirectory().getPath() + "/elab/");
+                // 视频文件目录
+                File wallpaperDirectory = new File(Environment.getExternalStorageDirectory().getPath() + "/elab/video");
                 wallpaperDirectory.mkdirs();
 
-                File wallpaperDirectory1 = new File(Environment.getExternalStorageDirectory().getPath() + "/elab/" + timeStampFile);
-                wallpaperDirectory1.mkdirs();
+                // 传感器时间戳文件目录
+                timeStampFile = String.valueOf((new Date()).getTime());
+                wallpaperDirectory = new File(Environment.getExternalStorageDirectory().getPath() + "/elab/sensor");
+                wallpaperDirectory.mkdirs();
+
+                // 视频帧时间戳文件目录
+                wallpaperDirectory = new File(Environment.getExternalStorageDirectory().getPath() + "/elab/photo");
+                wallpaperDirectory.mkdirs();
+                String filePath = Environment.getExternalStorageDirectory().getPath() + "/elab/photo/" + timeStampFile + ".csv";
+                try {
+                    photoWriter = new PrintWriter(filePath);
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+                photoWriter.println("Number" + ",Timestamp");
                 if (!prepareMediaRecorder()) {
                     Toast.makeText(MainActivity.this, "Fail in prepareMediaRecorder()!\n - Ended -", Toast.LENGTH_LONG).show();
                     finish();
@@ -249,6 +244,10 @@ public class MainActivity extends Activity implements SensorEventListener {
 
                 params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
                 mCamera.setParameters(params);
+                mCamera.setPreviewCallback((bytes, camera) -> {
+                    String timeStamp = String.valueOf((new Date()).getTime());
+                    photoWriter.println(timeStamp + "," + currentPhotoIndex++);
+                });
                 //d.beginData();
                 storeData();
                 chrono.setBase(SystemClock.elapsedRealtime());
@@ -289,7 +288,7 @@ public class MainActivity extends Activity implements SensorEventListener {
                 mediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_480P));
 
             //String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-            mediaRecorder.setOutputFile(Environment.getExternalStorageDirectory().getPath() + "/elab/" + timeStampFile + "/" + timeStampFile + ".mp4");
+            mediaRecorder.setOutputFile(Environment.getExternalStorageDirectory().getPath() + "/elab/video/" + timeStampFile + ".mp4");
             // 设置录制的视频编码和音频编码
 //            mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
 //            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
@@ -328,11 +327,12 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     double latitude_original = 0;
     double longitude_original = 0;
-    float distance = 0;
     float speed = 0;
     float dist[] = {0, 0, 0};
     PrintWriter writer = null;
+    PrintWriter photoWriter = null;
     long timechecker = 5000;
+
 
     class SayHello extends TimerTask {
         public void run() {
@@ -355,7 +355,7 @@ public class MainActivity extends Activity implements SensorEventListener {
                 timer.purge();
             }
             String timeStamp = String.valueOf((new Date()).getTime());
-            writer.println(longitude_original + "," + latitude_original + "," + speed + "," + dist[0] + "," + timeStamp + "," + linear_acc_x + "," + linear_acc_y + "," + linear_acc_z + "," +
+            writer.println(timeStamp + "," + longitude_original + "," + latitude_original + "," + speed + "," + dist[0] + "," + timeStamp + "," + linear_acc_x + "," + linear_acc_y + "," + linear_acc_z + "," +
                     heading + "," + newHeading + "," + gyro_x + "," + gyro_y + "," + gyro_z);
 //            String timeStamp = String.valueOf((new Date()).getTime());
 //            writer.println(timeStamp + "," +
@@ -364,7 +364,6 @@ public class MainActivity extends Activity implements SensorEventListener {
         }
 
         private Location getLastKnownLocation() {
-
             LocationManager mLocationManager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
             List<String> providers = mLocationManager.getProviders(true);
             Location bestLocation = null;
@@ -384,18 +383,15 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     public void storeData() {
 
-        String filePath = Environment.getExternalStorageDirectory().getPath() + "/elab/" + timeStampFile + "/" + timeStampFile + ".csv";
+        String filePath = Environment.getExternalStorageDirectory().getPath() + "/elab/sensor/" + timeStampFile + ".csv";
         try {
             writer = new PrintWriter(filePath);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
 
-        writer.println("Longitude" + "," + "Latitude" + "," + "Speed" + "," + "Distance" + "," + "Time" + "," + "Acc X" + "," + "Acc Y" + "," + "Acc Z" + "," + "Heading" + "," + "NewHeading"
+        writer.println("Timestamp" + "," + "Longitude" + "," + "Latitude" + "," + "Speed" + "," + "Distance" + "," + "Time" + "," + "Acc X" + "," + "Acc Y" + "," + "Acc Z" + "," + "Heading" + "," + "NewHeading"
                 + "," + "gyro_x" + "," + "gyro_y" + "," + "gyro_z");
-//        writer.println("Timestamp" + "," +
-//                "Longitude" + "," + "Latitude" + "," +
-//                "RotationV X" + "," + "RotationV Y" + "," + "RotationV Z" + "," + "RotationV W" + "," + "RotationV Acc");
         LocationManager original = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         Location original_location = original.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
         if (original.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER) != null) {
@@ -414,6 +410,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     public void enddata() {
         writer.close();
+        photoWriter.close();
     }
 
 
@@ -510,26 +507,10 @@ public class MainActivity extends Activity implements SensorEventListener {
 
 
     public void addQuality(View view) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        String setting = new String();
-        if (quality == 0) {
-            setting = "1080p";
-        } else if (quality == 1) {
-            setting = "720p";
-        } else if (quality == 2) {
-            setting = "480p";
-        }
-        builder.setTitle("Pick Quality, Current setting: " + setting)
-                .setItems(options, (dialog, which) -> {
-                    if (which == 0) {
-                        quality = 0;
-                    } else if (which == 1) {
-                        quality = 1;
-                    } else if (which == 2) {
-                        quality = 2;
-                    }
-                });
-        builder.show();
+        DialogUHelper.shopSingleCheckableDialog(this, options, quality, (dialog, which) -> {
+            quality = which;
+            dialog.dismiss();
+        });
     }
 
     public void addRate(View view) {
@@ -555,4 +536,5 @@ public class MainActivity extends Activity implements SensorEventListener {
             dialog.dismiss();
         });
     }
+
 }

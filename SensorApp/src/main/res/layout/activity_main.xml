@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.yanhang.androidimurecorder.MainActivity">
+
+    <GridLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:id = "@+id/layout_imu_grid"
+        android:columnCount="4"
+        android:rowCount="5">
+
+        <!-- Rotation-->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:text="Gyro.:"/>
+        <TextView
+            android:layout_width="@dimen/imu_number_width"
+            android:layout_height="wrap_content"
+            android:id="@+id/label_rx"
+            android:layout_gravity="right"
+            android:text="0.000000"/>
+        <TextView
+            android:layout_width="@dimen/imu_number_width"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:id="@+id/label_ry"
+            android:text="0.000000"/>
+        <TextView
+            android:layout_width="@dimen/imu_number_width"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:id="@+id/label_rz"
+            android:text="0.000000"/>
+
+        <!-- Acceleration -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:text="Acce.:"/>
+        <TextView
+            android:layout_width="@dimen/imu_number_width"
+            android:layout_height="wrap_content"
+            android:id="@+id/label_ax"
+            android:layout_gravity="right"
+            android:text="0.000000"/>
+        <TextView
+            android:layout_width="@dimen/imu_number_width"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:id="@+id/label_ay"
+            android:text="0.000000"/>
+        <TextView
+            android:layout_width="@dimen/imu_number_width"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:id="@+id/label_az"
+            android:text="0.000000"/>
+
+        <!-- user acceleration -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:text="LinAcce:"/>
+        <TextView
+            android:layout_width="@dimen/imu_number_width"
+            android:layout_height="wrap_content"
+            android:id="@+id/label_lx"
+            android:layout_gravity="right"
+            android:text="0.000000"/>
+        <TextView
+            android:layout_width="@dimen/imu_number_width"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:id="@+id/label_ly"
+            android:text="0.000000"/>
+        <TextView
+            android:layout_width="@dimen/imu_number_width"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:id="@+id/label_lz"
+            android:text="0.000000"/>
+
+        <!-- gravity -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:text="Gravity:"/>
+        <TextView
+            android:layout_width="@dimen/imu_number_width"
+            android:layout_height="wrap_content"
+            android:id="@+id/label_gx"
+            android:layout_gravity="right"
+            android:text="0.000000"/>
+        <TextView
+            android:layout_width="@dimen/imu_number_width"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:id="@+id/label_gy"
+            android:text="0.000000"/>
+        <TextView
+            android:layout_width="@dimen/imu_number_width"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:id="@+id/label_gz"
+            android:text="0.000000"/>
+
+    </GridLayout>
+
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:orientation="vertical">
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/button_start_stop"
+            android:text="@string/start_title"
+            android:onClick="startStopRecording" />
+        <TextView
+            android:id="@+id/textview_file"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/button_start_stop"
+            android:layout_centerHorizontal="true"
+            android:text="@string/write_file"
+            android:textAlignment="center"/>
+        <ToggleButton
+            android:id="@+id/toggle_file"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/textview_file"
+            android:checked="true"
+            android:onClick="toogleFileWriting"/>
+    </RelativeLayout>
+
+</RelativeLayout>
