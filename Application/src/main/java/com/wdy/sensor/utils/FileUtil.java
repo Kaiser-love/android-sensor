@@ -2,7 +2,6 @@ package com.wdy.sensor.utils;
 
 import android.graphics.Bitmap;
 import android.os.Environment;
-import android.util.Log;
 
 import java.io.File;
 import java.io.FileNotFoundException;

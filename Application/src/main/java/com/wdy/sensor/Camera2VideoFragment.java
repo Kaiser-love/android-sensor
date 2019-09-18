@@ -44,7 +44,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
-import com.kongzue.dialog.listener.InputDialogOkButtonClickListener;
 import com.kongzue.dialog.v2.InputDialog;
 import com.wdy.sensor.activity.R;
 import com.wdy.sensor.utils.DialogUHelper;
@@ -393,7 +392,7 @@ public class Camera2VideoFragment extends Fragment
             mVideoSize = new Size(Integer.valueOf(size[0]), Integer.valueOf(size[1]));
             mPreviewSize = mVideoSize;
             mTextureView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-            setUpImageReader();
+            // setUpImageReader();
             int orientation = getResources().getConfiguration().orientation;
 //            if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
 //                mTextureView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
@@ -455,8 +454,6 @@ public class Camera2VideoFragment extends Fragment
 
             Surface previewSurface = new Surface(texture);
             mPreviewBuilder.addTarget(previewSurface);
-            // 设置预览画面的帧率 视实际情况而定选择一个帧率范围
-            mPreviewBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRanges[currentOptions2Index]);
             mCameraDevice.createCaptureSession(Collections.singletonList(previewSurface),
                     new CameraCaptureSession.StateCallback() {
 
@@ -474,6 +471,7 @@ public class Camera2VideoFragment extends Fragment
                             }
                         }
                     }, mBackgroundHandler);
+
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -490,7 +488,14 @@ public class Camera2VideoFragment extends Fragment
             setUpCaptureRequestBuilder(mPreviewBuilder);
             HandlerThread thread = new HandlerThread("CameraPreview");
             thread.start();
-            mPreviewSession.setRepeatingRequest(mPreviewBuilder.build(), null, null);
+            mPreviewSession.setRepeatingRequest(mPreviewBuilder.build(), new CameraCaptureSession.CaptureCallback() {
+                @Override
+                public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
+                    if (mRecorder != null) {
+                        mRecorder.addPhotoNumber(timestamp, currentPhotoIndex.getAndIncrement());
+                    }
+                }
+            }, mBackgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -498,6 +503,8 @@ public class Camera2VideoFragment extends Fragment
 
     private void setUpCaptureRequestBuilder(CaptureRequest.Builder builder) {
         builder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+        // 设置预览画面的帧率 视实际情况而定选择一个帧率范围
+        builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRanges[currentOptions2Index]);
     }
 
     private void setUpMediaRecorder() throws IOException {
@@ -610,8 +617,8 @@ public class Camera2VideoFragment extends Fragment
             mPreviewBuilder.addTarget(recorderSurface);
 
             // 设置预览回调的 Surface
-            surfaces.add(mPreviewImageReader.getSurface());
-            mPreviewBuilder.addTarget(mPreviewImageReader.getSurface());
+//            surfaces.add(mPreviewImageReader.getSurface());
+//            mPreviewBuilder.addTarget(mPreviewImageReader.getSurface());
 
 
             // Start a capture session
