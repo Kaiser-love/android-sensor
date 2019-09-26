@@ -372,6 +372,9 @@ public class Camera2VideoFragment extends Fragment
             fpsRanges = characteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
             options2 = new String[fpsRanges.length];
             for (int i = 0; i < fpsRanges.length; i++) {
+                if (firstInit && fpsRanges[i].getLower() == 21 && fpsRanges[i].getUpper() == 21) {
+                    currentOptions2Index = i;
+                }
                 options2[i] = fpsRanges[i].getLower() + " " + fpsRanges[i].getUpper();
             }
             StreamConfigurationMap map = characteristics
@@ -382,8 +385,12 @@ public class Camera2VideoFragment extends Fragment
             Size[] outputSizes = map.getOutputSizes(SurfaceTexture.class);
             options = new String[outputSizes.length];
             for (int i = 0; i < outputSizes.length; i++) {
+                if (firstInit && outputSizes[i].getWidth() == 1280 && outputSizes[i].getHeight() == 960) {
+                    currentOptionsIndex = i;
+                }
                 options[i] = outputSizes[i].getWidth() + " " + outputSizes[i].getHeight();
             }
+            firstInit = false;
             mSensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
 //            mVideoSize = chooseVideoSize(map.getOutputSizes(MediaRecorder.class));
 //            mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
@@ -752,10 +759,12 @@ public class Camera2VideoFragment extends Fragment
 
     private String[] options;
     private Integer currentOptionsIndex = 10;
-    private Integer currentOptions1Index = 2;
-    private String[] options1 = {"SENSOR_DELAY_FASTEST", "SENSOR_DELAY_GAME", "SENSOR_DELAY_UI", "SENSOR_DELAY_NORMAL", "自定义"};
+    private Integer currentOptions1Index = 4;
+    private String[] options1 = {"SENSOR_DELAY_FASTEST", "SENSOR_DELAY_GAME", "SENSOR_DELAY_UI", "SENSOR_DELAY_NORMAL", "5"};
     private String[] options2;
     private Integer currentOptions2Index = 0;
+
+    private Boolean firstInit = true;
     // 当前视频帧
     private AtomicInteger currentPhotoIndex = new AtomicInteger(1);
 
